@@ -16,96 +16,123 @@ color:#fff;
 header{
 display:flex;
 justify-content:space-between;
-padding:18px 25px;
+padding:15px 25px;
 border-bottom:1px solid #222;
+background:#0b0b0d;
+position:sticky;
+top:0;
 }
 
-.logo{font-size:22px;font-weight:700;}
+.logo{font-size:20px;font-weight:700;}
 
 .btn{
 background:#fff;
 color:#000;
 padding:8px 12px;
-border-radius:20px;
-cursor:pointer;
+border-radius:12px;
 border:none;
+cursor:pointer;
+margin-left:5px;
 }
 
 .grid{
 display:grid;
-grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
 gap:15px;
 padding:20px;
 }
 
 .card{
 background:#141418;
-border-radius:18px;
+border-radius:15px;
 overflow:hidden;
-transition:.3s;
+box-shadow:0 10px 25px rgba(0,0,0,0.3);
 }
 
 .card img{
 width:100%;
 height:240px;
 object-fit:cover;
-cursor:pointer;
 }
 
-.card-content{padding:12px;}
+.card-content{
+padding:12px;
+}
 
 button{
 width:100%;
 padding:10px;
 margin-top:8px;
 border:none;
-border-radius:12px;
+border-radius:10px;
 cursor:pointer;
 }
 
 .add{background:#222;color:#fff;}
 .buy{background:#fff;color:#000;}
-.heart{background:#ff2b2b;color:#fff;}
 
 .cart{
 position:fixed;
-right:0;
+right:-350px;
 top:0;
-width:300px;
+width:320px;
 height:100%;
 background:#111;
 padding:15px;
-display:none;
 overflow:auto;
+transition:0.3s;
+border-left:1px solid #222;
 }
 
-.page{padding:20px;}
+.cart.open{
+right:0;
+}
 
-.admin{
-position:fixed;
-bottom:20px;
-right:20px;
-background:#222;
-padding:10px;
-border-radius:10px;
+.cart-item{
+display:flex;
+justify-content:space-between;
+margin:8px 0;
+font-size:14px;
+}
+
+.remove{
+background:red;
+color:#fff;
+padding:3px 6px;
+border-radius:6px;
+font-size:12px;
 cursor:pointer;
+}
+
+.closeCart{
+background:#fff;
+color:#000;
+padding:8px;
+border-radius:10px;
+border:none;
+cursor:pointer;
+width:100%;
+margin-bottom:10px;
 }
 
 .modal{
 position:fixed;
 inset:0;
-background:rgba(0,0,0,0.8);
+background:rgba(0,0,0,0.7);
 display:none;
 justify-content:center;
 align-items:center;
 }
 
-.modal img{
-max-width:90%;
-max-height:90%;
+.modal-box{
+background:#111;
+padding:20px;
+border-radius:12px;
+width:300px;
+color:#fff;
 }
 
-input,textarea{
+input{
 width:100%;
 padding:10px;
 margin:5px 0;
@@ -129,54 +156,55 @@ border:none;
 
 <div class="cart" id="cart"></div>
 
-<div class="modal" id="modal" onclick="closeModal()">
-<img id="modalImg">
+<!-- ADMIN -->
+<div class="modal" id="admin">
+<div class="modal-box">
+<h3>Админ панель</h3>
+
+<input id="pass" placeholder="Пароль">
+<button class="btn" onclick="checkPass()">Войти</button>
+
+<div id="adminPanel" style="display:none;">
+<input id="name" placeholder="Название">
+<input id="price" placeholder="Цена">
+<input id="img" placeholder="Фото URL">
+<button class="btn" onclick="addProduct()">Добавить товар</button>
 </div>
 
-<!-- ADMIN -->
-<div class="modal" id="adminModal">
-<div style="background:#111;padding:20px;border-radius:15px;width:300px;">
-<h3>Admin Panel</h3>
-<input id="a_name" placeholder="Название">
-<input id="a_price" placeholder="Цена">
-<input id="a_img" placeholder="Фото URL">
-<button class="btn" onclick="addProduct()">Добавить товар</button>
-<br><br>
+<br>
 <button class="btn" onclick="closeAdmin()">Закрыть</button>
 </div>
 </div>
 
 <script>
 
+/* ТОВАРЫ */
 let products = JSON.parse(localStorage.getItem("products")) || [
-{name:"Футболка Black",price:"4300₸",image:"https://images.unsplash.com/photo-1523381210434-271e8be1f52b"},
-{name:"Hoodie Oversize",price:"12000₸",image:"https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf"}
+{name:"Пижама тройка",price:"4300₸",image:"https://instagram.fksn3-1.fna.fbcdn.net/v/t51.82787-15/669870708_17862744456674192_4597685935872456893_n.jpg"},
+{name:"Пижама BLACK",price:"4300₸",image:"https://scontent.fksn3-1.fna.fbcdn.net/v/t1.15752-9/677513936_2185097522287819_6905519790160162229_n.jpg"},
+{name:"Белая футболка",price:"4300₸",image:"https://scontent.fksn3-1.fna.fbcdn.net/v/t1.15752-9/675006985_1214829737212019_5884185380731183768_n.jpg"},
+{name:"Рубашка",price:"4300₸",image:"https://scontent.fksn3-1.fna.fbcdn.net/v/t1.15752-9/676857611_2008049373152780_458716015119722064_n.jpg"}
 ];
 
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
-let fav = JSON.parse(localStorage.getItem("fav")) || [];
 
-const phone="87789822346";
-
-/* SAVE */
 function save(){
 localStorage.setItem("products",JSON.stringify(products));
 localStorage.setItem("cart",JSON.stringify(cart));
-localStorage.setItem("fav",JSON.stringify(fav));
 }
 
-/* HOME */
+/* РЕНДЕР */
 function render(){
 let html = `
 <div class="grid">
 ${products.map((p,i)=>`
 <div class="card">
-<img src="${p.image}" onclick="openProduct(${i})">
+<img src="${p.image}">
 <div class="card-content">
 <h3>${p.name}</h3>
 <p>${p.price}</p>
 <button class="add" onclick="add(${i})">В корзину</button>
-<button class="heart" onclick="favAdd(${i})">❤</button>
+<button class="buy" onclick="buy(${i})">Купить</button>
 </div>
 </div>
 `).join("")}
@@ -186,26 +214,7 @@ ${products.map((p,i)=>`
 document.getElementById("app").innerHTML = html;
 }
 
-/* PRODUCT PAGE */
-function openProduct(i){
-let p=products[i];
-
-document.getElementById("app").innerHTML=`
-<div class="page">
-<h2>${p.name}</h2>
-<img src="${p.image}" style="width:100%;border-radius:15px">
-<h3>${p.price}</h3>
-
-<button class="add" onclick="add(${i})">В корзину</button>
-<button class="buy" onclick="buy(${i})">Купить</button>
-
-<br><br>
-<button class="btn" onclick="render()">← Назад</button>
-</div>
-`;
-}
-
-/* CART */
+/* КОРЗИНА */
 function add(i){
 cart.push(products[i]);
 save();
@@ -213,34 +222,50 @@ updateCart();
 }
 
 function updateCart(){
-document.getElementById("count").innerText=cart.length;
+document.getElementById("count").innerText = cart.length;
 
-let h="<h3>Корзина</h3>";
+let h = `<button class="closeCart" onclick="closeCart()">Закрыть корзину</button>`;
+h += "<h3>Корзина</h3>";
 
-cart.forEach(p=>{
-h+=`<p>${p.name} - ${p.price}</p>`;
+cart.forEach((p,i)=>{
+h+=`
+<div class="cart-item">
+${p.name}
+<button class="remove" onclick="remove(${i})">X</button>
+</div>
+`;
 });
 
 h+=`<button class="btn" onclick="order()">WhatsApp заказ</button>`;
 
-document.getElementById("cart").innerHTML=h;
+document.getElementById("cart").innerHTML = h;
 }
 
-/* TOGGLE */
+/* УДАЛЕНИЕ */
+function remove(i){
+cart.splice(i,1);
+save();
+updateCart();
+}
+
+/* ОТКРЫТЬ/ЗАКРЫТЬ КОРЗИНУ */
 function toggleCart(){
-let c=document.getElementById("cart");
-c.style.display=c.style.display==="block"?"none":"block";
+document.getElementById("cart").classList.add("open");
+updateCart();
 }
 
-/* ORDER */
+function closeCart(){
+document.getElementById("cart").classList.remove("open");
+}
+
+/* ЗАКАЗ */
 function order(){
-let text="Заказ:\n";
-cart.forEach(p=>text+=p.name+" "+p.price+"\n");
+let t="Заказ:\n";
+cart.forEach(p=>t+=p.name+" "+p.price+"\n");
 
-window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`);
+window.open(`https://wa.me/87789822346?text=${encodeURIComponent(t)}`);
 }
 
-/* BUY */
 function buy(i){
 cart=[products[i]];
 save();
@@ -248,44 +273,35 @@ updateCart();
 order();
 }
 
-/* FAVORITE */
-function favAdd(i){
-fav.push(products[i]);
-save();
-alert("Добавлено ❤");
-}
-
-/* IMAGE */
-function openImg(src){
-document.getElementById("modal").style.display="flex";
-document.getElementById("modalImg").src=src;
-}
-
-function closeModal(){
-document.getElementById("modal").style.display="none";
-}
-
-/* ADMIN */
+/* АДМИНКА */
 function openAdmin(){
-document.getElementById("adminModal").style.display="flex";
+document.getElementById("admin").style.display="flex";
 }
 
 function closeAdmin(){
-document.getElementById("adminModal").style.display="none";
+document.getElementById("admin").style.display="none";
+}
+
+function checkPass(){
+if(document.getElementById("pass").value==="1234"){
+document.getElementById("adminPanel").style.display="block";
+}else{
+alert("Неверный пароль");
+}
 }
 
 function addProduct(){
-let n=document.getElementById("a_name").value;
-let p=document.getElementById("a_price").value;
-let i=document.getElementById("a_img").value;
+products.push({
+name:document.getElementById("name").value,
+price:document.getElementById("price").value,
+image:document.getElementById("img").value
+});
 
-products.push({name:n,price:p,image:i});
 save();
 render();
-closeAdmin();
 }
 
-/* INIT */
+/* START */
 render();
 updateCart();
 
