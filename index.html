@@ -6,93 +6,111 @@
 <title>JTK WEAR</title>
 
 <style>
-body {
+body{
 margin:0;
-font-family:-apple-system, BlinkMacSystemFont;
+font-family:system-ui;
 background:#0b0b0d;
 color:#fff;
 }
 
-header {
+header{
 display:flex;
 justify-content:space-between;
-padding:20px 40px;
+padding:18px 25px;
 border-bottom:1px solid #222;
 }
 
-.logo {font-size:22px;font-weight:bold;}
+.logo{font-size:22px;font-weight:700;}
 
-.cart-btn {
+.btn{
 background:#fff;
 color:#000;
-padding:8px 15px;
+padding:8px 12px;
 border-radius:20px;
 cursor:pointer;
+border:none;
 }
 
-.hero {
-text-align:center;
-padding:60px 20px;
-}
-
-.hero h1 {font-size:42px;}
-
-.grid {
+.grid{
 display:grid;
 grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-gap:20px;
+gap:15px;
 padding:20px;
 }
 
-.card {
+.card{
 background:#141418;
-border-radius:20px;
+border-radius:18px;
 overflow:hidden;
-transform:translateY(40px);
-opacity:0;
-transition:0.6s;
+transition:.3s;
 }
 
-.card.show {
-transform:translateY(0);
-opacity:1;
-}
-
-.card img {
+.card img{
 width:100%;
-height:260px;
+height:240px;
 object-fit:cover;
-transition:0.5s;
-}
-
-.card:hover img {
-transform:scale(1.08);
-}
-
-.card-content {padding:18px;}
-
-button {
-width:100%;
-padding:10px;
-border:none;
-border-radius:20px;
-margin-top:10px;
 cursor:pointer;
 }
 
-.add {background:#222;color:#fff;}
-.buy {background:#fff;color:#000;}
+.card-content{padding:12px;}
 
-.cart {
+button{
+width:100%;
+padding:10px;
+margin-top:8px;
+border:none;
+border-radius:12px;
+cursor:pointer;
+}
+
+.add{background:#222;color:#fff;}
+.buy{background:#fff;color:#000;}
+.heart{background:#ff2b2b;color:#fff;}
+
+.cart{
 position:fixed;
 right:0;
 top:0;
 width:300px;
 height:100%;
 background:#111;
-padding:20px;
+padding:15px;
 display:none;
 overflow:auto;
+}
+
+.page{padding:20px;}
+
+.admin{
+position:fixed;
+bottom:20px;
+right:20px;
+background:#222;
+padding:10px;
+border-radius:10px;
+cursor:pointer;
+}
+
+.modal{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,0.8);
+display:none;
+justify-content:center;
+align-items:center;
+}
+
+.modal img{
+max-width:90%;
+max-height:90%;
+}
+
+input,textarea{
+width:100%;
+padding:10px;
+margin:5px 0;
+border-radius:10px;
+border:none;
 }
 </style>
 </head>
@@ -101,128 +119,175 @@ overflow:auto;
 
 <header>
 <div class="logo">JTK WEAR</div>
-<div class="cart-btn" onclick="toggleCart()">🛒 (<span id="count">0</span>)</div>
+<div>
+<button class="btn" onclick="toggleCart()">🛒 <span id="count">0</span></button>
+<button class="btn" onclick="openAdmin()">Admin</button>
+</div>
 </header>
 
-<section class="hero">
-<h1>Одежда без наценки</h1>
-</section>
-
-<div class="grid" id="products"></div>
+<div id="app"></div>
 
 <div class="cart" id="cart"></div>
 
+<div class="modal" id="modal" onclick="closeModal()">
+<img id="modalImg">
+</div>
+
+<!-- ADMIN -->
+<div class="modal" id="adminModal">
+<div style="background:#111;padding:20px;border-radius:15px;width:300px;">
+<h3>Admin Panel</h3>
+<input id="a_name" placeholder="Название">
+<input id="a_price" placeholder="Цена">
+<input id="a_img" placeholder="Фото URL">
+<button class="btn" onclick="addProduct()">Добавить товар</button>
+<br><br>
+<button class="btn" onclick="closeAdmin()">Закрыть</button>
+</div>
+</div>
+
 <script>
 
-// 🔥 ТУТ ВСЕ ТОВАРЫ
-const products = [
-{
-name:" пижама-тройка ",
-price:"4300₸",
-image:"https://instagram.fksn3-1.fna.fbcdn.net/v/t51.82787-15/669870708_17862744456674192_4597685935872456893_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=110&ig_cache_key=Mzg3MjEyMTYwMTY3NjU3MTU5NQ%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6InhwaWRzLjExNzl4MTE5OS5zZHIuQzMifQ%3D%3D&_nc_ohc=TyK3M6gnF8oQ7kNvwE-xhFI&_nc_oc=AdqGT5_YgpDhtPbTd4i-QRmwSGUD4TDJiDxrNXMHJz5p1tvmZqofdiLq8_l4R7xn5D0&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=instagram.fksn3-1.fna&_nc_gid=4epuYFiBfakIMFdYwJSPlw&_nc_ss=7a22e&oh=00_Af1a5D4G7PPBT60qaWTOxbUiP8NFesUpZbayj7XwNRzUwA&oe=69F43672"
-},
-{
-name:"пижама-тройка BLACK",
-price:"4300₸",
-image:"https://scontent.fksn3-1.fna.fbcdn.net/v/t1.15752-9/677513936_2185097522287819_6905519790160162229_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=fc17b8&efg=eyJxZV9ncm91cHMiOlsiaWdkX2Jlc3RfZWZmb3J0X2ltYWdlOmNvbnRyb2wiXX0%3D&_nc_ohc=ZwiPEh_yHC4Q7kNvwFRxWNQ&_nc_oc=AdqXR5m-6qgD3A_Q1BsLyo0BXGnG9t3xcW8Qrr4KmL9FB1VN5AmNmbM0f1lXoZU-v3A&_nc_zt=23&_nc_ht=scontent.fksn3-1.fna&_nc_ss=7b6a8&oh=03_Q7cD5AFyxKIZNvr-wlJhslRoi1p_XboxhPnXuZPva7q7I9en8Q&oe=6A15F946"
-},
-{
-name:"Белая футболка",
-price:"4300₸",
-image:"https://scontent.fksn3-1.fna.fbcdn.net/v/t1.15752-9/675006985_1214829737212019_5884185380731183768_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=fc17b8&efg=eyJxZV9ncm91cHMiOlsiaWdkX2Jlc3RfZWZmb3J0X2ltYWdlOmNvbnRyb2wiXX0%3D&_nc_ohc=qAmUX9mTDyoQ7kNvwHaqx2c&_nc_oc=AdrBUAIA98mZ5D1DIGmiR5TroDyLpod0dP9EoSJ54kA7ykskWotR3ouL3lVNAnyKCs0&_nc_zt=23&_nc_ht=scontent.fksn3-1.fna&_nc_ss=7b6a8&oh=03_Q7cD5AFQP3jtaTZibUKPxhDWstj76DNFPrfQxcHeXsTExhdNJw&oe=6A15F010"
-},
-{
-name:"рубашка",
-price:"4300₸",
-image:"https://scontent.fksn3-1.fna.fbcdn.net/v/t1.15752-9/676857611_2008049373152780_458716015119722064_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=fc17b8&efg=eyJxZV9ncm91cHMiOlsiaWdkX2Jlc3RfZWZmb3J0X2ltYWdlOmNvbnRyb2wiXX0%3D&_nc_ohc=eUI--kHVkyoQ7kNvwHSHPzl&_nc_oc=Adpu-FCDXjvKN6Es5A3-hFxGcWoq1fzQTEZ6623SMMmtz5B4WvQmEaUwjEaaPZmSwYc&_nc_zt=23&_nc_ht=scontent.fksn3-1.fna&_nc_ss=7b6a8&oh=03_Q7cD5AF4tRSCNe3bh2O2BXHYG9fFlPUu-eYOz9_PNp9uTyu54g&oe=6A15F51E"
-}
+let products = JSON.parse(localStorage.getItem("products")) || [
+{name:"Футболка Black",price:"4300₸",image:"https://images.unsplash.com/photo-1523381210434-271e8be1f52b"},
+{name:"Hoodie Oversize",price:"12000₸",image:"https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf"}
 ];
 
-// 🔥 ТВОЙ НОМЕР (замени)
-const phone = "87789822346";
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+let fav = JSON.parse(localStorage.getItem("fav")) || [];
 
-let cart = [];
+const phone="87789822346";
 
-// рендер товаров
-function render(){
-const el = document.getElementById("products");
-el.innerHTML = "";
-
-products.forEach((p,i)=>{
-el.innerHTML += `
-<div class="card">
-<img src="${p.image}">
-<div class="card-content">
-<h3>${p.name}</h3>
-<p class="price">${p.price}</p>
-<button class="add" onclick="addToCart(${i})">В корзину</button>
-<button class="buy" onclick="buyNow(${i})">Купить</button>
-</div>
-</div>
-`;
-});
-
-animateCards();
+/* SAVE */
+function save(){
+localStorage.setItem("products",JSON.stringify(products));
+localStorage.setItem("cart",JSON.stringify(cart));
+localStorage.setItem("fav",JSON.stringify(fav));
 }
 
-// корзина
-function addToCart(i){
+/* HOME */
+function render(){
+let html = `
+<div class="grid">
+${products.map((p,i)=>`
+<div class="card">
+<img src="${p.image}" onclick="openProduct(${i})">
+<div class="card-content">
+<h3>${p.name}</h3>
+<p>${p.price}</p>
+<button class="add" onclick="add(${i})">В корзину</button>
+<button class="heart" onclick="favAdd(${i})">❤</button>
+</div>
+</div>
+`).join("")}
+</div>
+`;
+
+document.getElementById("app").innerHTML = html;
+}
+
+/* PRODUCT PAGE */
+function openProduct(i){
+let p=products[i];
+
+document.getElementById("app").innerHTML=`
+<div class="page">
+<h2>${p.name}</h2>
+<img src="${p.image}" style="width:100%;border-radius:15px">
+<h3>${p.price}</h3>
+
+<button class="add" onclick="add(${i})">В корзину</button>
+<button class="buy" onclick="buy(${i})">Купить</button>
+
+<br><br>
+<button class="btn" onclick="render()">← Назад</button>
+</div>
+`;
+}
+
+/* CART */
+function add(i){
 cart.push(products[i]);
+save();
 updateCart();
 }
 
 function updateCart(){
-document.getElementById("count").innerText = cart.length;
+document.getElementById("count").innerText=cart.length;
 
-let html = "<h2>Корзина</h2>";
+let h="<h3>Корзина</h3>";
 
 cart.forEach(p=>{
-html += `<p>${p.name} - ${p.price}</p>`;
+h+=`<p>${p.name} - ${p.price}</p>`;
 });
 
-html += `<button onclick="order()">Заказать в WhatsApp</button>`;
+h+=`<button class="btn" onclick="order()">WhatsApp заказ</button>`;
 
-document.getElementById("cart").innerHTML = html;
+document.getElementById("cart").innerHTML=h;
 }
 
+/* TOGGLE */
 function toggleCart(){
-const c = document.getElementById("cart");
-c.style.display = c.style.display === "block" ? "none" : "block";
+let c=document.getElementById("cart");
+c.style.display=c.style.display==="block"?"none":"block";
 }
 
-// заказ
+/* ORDER */
 function order(){
-let text = "Здравствуйте, хочу заказать:\n";
-
-cart.forEach(p=>{
-text += `${p.name} ${p.price}\n`;
-});
+let text="Заказ:\n";
+cart.forEach(p=>text+=p.name+" "+p.price+"\n");
 
 window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`);
 }
 
-// купить сразу
-function buyNow(i){
+/* BUY */
+function buy(i){
 cart=[products[i]];
+save();
 updateCart();
 order();
 }
 
+/* FAVORITE */
+function favAdd(i){
+fav.push(products[i]);
+save();
+alert("Добавлено ❤");
+}
+
+/* IMAGE */
+function openImg(src){
+document.getElementById("modal").style.display="flex";
+document.getElementById("modalImg").src=src;
+}
+
+function closeModal(){
+document.getElementById("modal").style.display="none";
+}
+
+/* ADMIN */
+function openAdmin(){
+document.getElementById("adminModal").style.display="flex";
+}
+
+function closeAdmin(){
+document.getElementById("adminModal").style.display="none";
+}
+
+function addProduct(){
+let n=document.getElementById("a_name").value;
+let p=document.getElementById("a_price").value;
+let i=document.getElementById("a_img").value;
+
+products.push({name:n,price:p,image:i});
+save();
 render();
-
-function animateCards(){
-const cards = document.querySelectorAll(".card");
-
-const observer = new IntersectionObserver(entries=>{
-entries.forEach(entry=>{
-if(entry.isIntersecting){
-entry.target.classList.add("show");
+closeAdmin();
 }
-});
-});
 
-cards.forEach(card=>observer.observe(card));
-}
+/* INIT */
+render();
+updateCart();
 
 </script>
 
